@@ -228,7 +228,7 @@ static Monitor *wintomon(Window w);
 static int xerror(Display *dpy, XErrorEvent *ee);
 static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static int xerrorstart(Display *dpy, XErrorEvent *ee);
-static void zoom(const Arg *arg);
+static void zoomswap(const Arg *arg);
 
 /* variables */
 static const char broken[] = "broken";
@@ -262,6 +262,10 @@ static Display *dpy;
 static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root;
+
+/* zoomswap */
+static Client * findbefore(Client *c);
+static Client *prevzoom = NULL;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -2021,18 +2025,49 @@ xerrorstart(Display *dpy, XErrorEvent *ee)
 	return -1;
 }
 
+Client *
+findbefore(Client *c) {
+	Client *tmp;
+	if(c == selmon->clients)
+		return NULL;
+	for(tmp = selmon->clients; tmp && tmp->next != c; tmp = tmp->next) ;
+	return tmp;
+}
 void
-zoom(const Arg *arg)
-{
-	Client *c = selmon->sel;
+zoomswap(const Arg *arg) {
+    Client *c = selmon->sel;
+    Client *at = NULL, *cold, *cprevious = NULL;
 
-	if (!selmon->lt[selmon->sellt]->arrange
-	|| (selmon->sel && selmon->sel->isfloating))
-		return;
-	if (c == nexttiled(selmon->clients))
-		if (!c || !(c = nexttiled(c->next)))
-			return;
-	pop(c);
+    if(!selmon->lt[selmon->sellt]->arrange
+            || (selmon->sel && selmon->sel->isfloating))
+        return;
+    if(c == nexttiled(selmon->clients)) {
+        at = findbefore(prevzoom);
+        if(at)
+            cprevious = nexttiled(at->next);
+        if(!cprevious || cprevious != prevzoom) {
+            prevzoom = NULL;
+            if(!c || !(c = nexttiled(c->next)))
+                return;
+        } else
+            c = cprevious;
+    }
+    cold = nexttiled(selmon->clients);
+    if(c != cold && !at)
+        at = findbefore(c);
+    detach(c);
+    attach(c);
+    /* swap windows instead of pushing the previous one down */
+    if(c != cold && at) {
+        prevzoom = cold;
+        if(cold && at != cold) {
+            detach(cold);
+            cold->next = at->next;
+            at->next = cold;
+        }
+    }
+    focus(c);
+    arrange(c->mon);
 }
 
 int
