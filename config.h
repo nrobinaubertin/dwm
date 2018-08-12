@@ -69,7 +69,6 @@ static const char *bklu[] = { "xbacklight", "-steps", "1", "-time", "0", "-inc",
 static const char *bkld[] = { "xbacklight", "-steps", "1", "-time", "0", "-dec", "5", NULL };
 static const char *shtdwn[] = { "sudo", "shutdown", "-h", "now", NULL };
 
-
 /*
  * Rules for the keyboard shortcuts:
  * - use the WINKEY for the shortcuts (so that we have no conflicts with cli apps)
