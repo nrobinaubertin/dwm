@@ -49,9 +49,7 @@ static void changeredshift(const Arg *arg);
 #define WINKEY Mod4Mask
 #define TAGKEYS(KEY,TAG) \
 	{ WINKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
-	{ WINKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
-	{ WINKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
-	{ WINKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
+	{ WINKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} },
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
@@ -98,34 +96,6 @@ static Key keys[] = {
 	{ 0,	                        XF86XK_AudioMute,               togglesound,        {0} },
 	{ 0,	                        XF86XK_AudioLowerVolume,        spawn,              {.v = vold } },
 	{ 0,	                        XF86XK_AudioRaiseVolume,        spawn,              {.v = volu } },
-
-	// { MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
-	// { MODKEY,                       XK_b,      togglebar,      {0} },
-	// { MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	// { MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
-	// { MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
-	// { MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
-	// { MODKEY,                       XK_Tab,    view,           {0} },
-	// { MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-	// { MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
-	// { MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
-	// { MODKEY,                       XK_space,  setlayout,      {0} },
-	// { MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
-	// { MODKEY,                       XK_0,      view,           {.ui = ~0 } },
-	// { MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
-	// { MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
-	// { MODKEY,                       XK_period, focusmon,       {.i = +1 } },
-	// { MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
-	// { MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
-	// TAGKEYS(                        0x26,                      0)
-	// TAGKEYS(                        0xe9,                      1)
-	// TAGKEYS(                        0x22,                      2)
-	// TAGKEYS(                        0x27,                      3)
-	// TAGKEYS(                        0x28,                      4)
-	// TAGKEYS(                        0x2d,                      5)
-	// TAGKEYS(                        0xe8,                      6)
-	// TAGKEYS(                        0x5f,                      7)
-	// TAGKEYS(                        0xe7,                      8)
 };
 
 // funtion that alternates between LVDS1 (laptop screen) and VGA1 (VGA output)
