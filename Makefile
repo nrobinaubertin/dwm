@@ -15,8 +15,7 @@ options:
 	@echo "CC       = ${CC}"
 
 .c.o:
-	@echo CC $<
-	@${CC} -c ${CFLAGS} $<
+	$(CC) -c ${CFLAGS} $<
 
 ${OBJ}: config.h config.mk
 
@@ -25,8 +24,7 @@ config.h:
 	@cp config.def.h $@
 
 dwm: ${OBJ}
-	@echo CC -o $@
-	@${CC} -o $@ ${OBJ} ${LDFLAGS}
+	$(CC) -o $@ ${OBJ} ${LDFLAGS}
 
 clean:
 	@echo cleaning
