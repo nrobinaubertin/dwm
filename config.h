@@ -34,10 +34,7 @@ static const int nmaster     = 1;    /* number of clients in master area */
 static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
 
 static const Layout layouts[] = {
-	/* symbol     arrange function */
 	{ "monocle",      monocle },
-	// { "tile",      tile },    /* first entry is default */
-	// { "floating",      NULL },    /* no layout function means floating behavior */
 };
 
 static void togglesound(const Arg *arg);
