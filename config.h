@@ -113,7 +113,7 @@ static int redShift = 0;
 void
 changeredshift(const Arg *arg)
 {
-    redShift = ((redShift + arg->i) + 5) % 5;
+    redShift = (redShift + arg->i + 5) % 5;
     switch(redShift) {
         case 4:
             system("redshift -O 2000");

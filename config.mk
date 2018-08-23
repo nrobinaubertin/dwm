@@ -19,8 +19,8 @@ INCS = -I${X11INC} -I${FREETYPEINC}
 LIBS = -L${X11LIB} -lX11 ${FREETYPELIBS}
 
 # flags
-CPPFLAGS = -D_BSD_SOURCE -D_POSIX_C_SOURCE=2 -DVERSION=\"${VERSION}\"
-CFLAGS   = -std=c99 -pedantic -Wall -Wno-deprecated-declarations -Os ${INCS} ${CPPFLAGS}
+CPPFLAGS = -D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=2 -DVERSION=\"${VERSION}\"
+CFLAGS   = -std=c99 -pedantic -Wall -Wno-unused-result -Wno-deprecated-declarations -Os ${INCS} ${CPPFLAGS}
 LDFLAGS  += ${LIBS}
 
 # compiler and linker

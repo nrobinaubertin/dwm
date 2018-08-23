@@ -207,7 +207,7 @@ static const char broken[] = "broken";
 static char stext[256];
 static int screen;
 static int sw, sh;           /* X display screen geometry width, height */
-static int bh, blw = 0;      /* bar geometry */
+static int bh = 0;           /* bar geometry */
 static int (*xerrorxlib)(Display *, XErrorEvent *);
 static unsigned int numlockmask = 0;
 static void (*handler[LASTEvent]) (XEvent *) = {
@@ -608,28 +608,10 @@ void
 drawbar(Monitor *m)
 {
 	int x, xx, w, dx;
-	unsigned int i, occ = 0, urg = 0;
-	Client *c;
 
 	dx = (drw->fonts[0]->ascent + drw->fonts[0]->descent + 2) / 4;
 
-	for (c = m->clients; c; c = c->next) {
-		occ |= c->tags;
-		if (c->isurgent)
-			urg |= c->tags;
-	}
 	x = 0;
-	for (i = 0; i < LENGTH(tags); i++) {
-		w = TEXTW(tags[i]);
-		drw_setscheme(drw, m->tagset[m->seltags] & 1 << i ? &scheme[SchemeSel] : &scheme[SchemeNorm]);
-		drw_text(drw, x, 0, w, bh, tags[i], urg & 1 << i);
-		drw_rect(drw, x + 1, 1, dx, dx, m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
-		           occ & 1 << i, urg & 1 << i);
-		x += w;
-	}
-	w = blw = TEXTW("monocle");
-	drw_setscheme(drw, &scheme[SchemeNorm]);
-	x += w;
 	xx = x;
 	if (m == selmon) { /* status is only drawn on selected monitor */
 		w = TEXTW(stext);
@@ -645,7 +627,6 @@ drawbar(Monitor *m)
 		x = xx;
 		if (m->sel) {
 			drw_setscheme(drw, m == selmon ? &scheme[SchemeSel] : &scheme[SchemeNorm]);
-			drw_text(drw, x, 0, w, bh, m->sel->name, 0);
 			drw_rect(drw, x + 1, 1, dx, dx, m->sel->isfixed, m->sel->isfloating, 0);
 		} else {
 			drw_setscheme(drw, &scheme[SchemeNorm]);
