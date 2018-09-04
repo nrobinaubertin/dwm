@@ -20,8 +20,8 @@ LIBS = -L${X11LIB} -lX11 ${FREETYPELIBS}
 
 # flags
 CPPFLAGS = -D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=2 -DVERSION=\"${VERSION}\"
-CFLAGS   = -std=c99 -pedantic -Wall -Wno-unused-result -Wno-deprecated-declarations -Os ${INCS} ${CPPFLAGS}
+CFLAGS   = -std=c11 -pedantic -Wall -Wno-unused-result -Wno-deprecated-declarations -Oz ${INCS} ${CPPFLAGS}
 LDFLAGS  += ${LIBS}
 
 # compiler and linker
-CC = cc
+CC = clang
