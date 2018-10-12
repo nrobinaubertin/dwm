@@ -1,3 +1,3 @@
 #!/bin/sh
 make
-cp -f dwm ~/bin
+cp -f dwm ~/.local/bin
