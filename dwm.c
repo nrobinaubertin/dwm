@@ -78,7 +78,7 @@ struct Client {
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
 	int bw, oldbw;
 	unsigned int tags;
-	int isfixed, isurgent, neverfocus, oldstate, isfullscreen;
+	int isurgent, neverfocus, oldstate, isfullscreen;
 	Client *next;
 	Client *snext;
 	Monitor *mon;
@@ -1312,8 +1312,6 @@ updatesizehints(Client *c)
 		c->maxa = (float)size.max_aspect.x / size.max_aspect.y;
 	} else
 		c->maxa = c->mina = 0.0;
-	c->isfixed = (c->maxw && c->minw && c->maxh && c->minh
-	             && c->maxw == c->minw && c->maxh == c->minh);
 }
 
 void
