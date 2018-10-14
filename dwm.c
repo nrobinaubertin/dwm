@@ -146,7 +146,6 @@ static void enternotify(XEvent *e);
 static void expose(XEvent *e);
 static void focus(Client *c);
 static void focusstack(const Arg *arg);
-static int getrootptr(int *x, int *y);
 static long getstate(Window w);
 static int gettextprop(Window w, Atom atom, char *text, unsigned int size); // status text
 static void grabkeys(void);
@@ -187,7 +186,6 @@ static void updatestatus(void);
 static void updatewmhints(Client *c);
 static void view(const Arg *arg);
 static Client *wintoclient(Window w);
-static Monitor *wintomon(Window w);
 static int xerror(Display *dpy, XErrorEvent *ee);
 static int xerrordummy(Display *dpy, XErrorEvent *ee);
 static void zoomswap(const Arg *arg);
@@ -220,7 +218,7 @@ static Cur *cursor[CurLast];
 static ClrScheme scheme[SchemeLast];
 static Display *dpy;
 static Drw *drw;
-static Monitor *mons, *selmon;
+static Monitor *mons;
 static Window root;
 
 /* zoomswap */
@@ -357,7 +355,7 @@ cleanup(void)
 	size_t i;
 
 	view(&a);
-	selmon->lt[selmon->sellt] = &foo;
+	mons->lt[mons->sellt] = &foo;
     unmanage(mons->stack, 0);
 	XUngrabKey(dpy, AnyKey, AnyModifier, root);
 	for (i = 0; i < CurLast; i++)
@@ -458,7 +456,7 @@ configurerequest(XEvent *e)
 	if ((c = wintoclient(ev->window))) {
 		if (ev->value_mask & CWBorderWidth)
 			c->bw = ev->border_width;
-		else if (!selmon->lt[selmon->sellt]->arrange) {
+		else if (!mons->lt[mons->sellt]->arrange) {
 			m = c->mon;
 			if (ev->value_mask & CWX) {
 				c->oldx = c->x;
@@ -556,17 +554,12 @@ void
 enternotify(XEvent *e)
 {
 	Client *c;
-	Monitor *m;
 	XCrossingEvent *ev = &e->xcrossing;
 
 	if ((ev->mode != NotifyNormal || ev->detail == NotifyInferior) && ev->window != root)
 		return;
 	c = wintoclient(ev->window);
-	m = c ? c->mon : wintomon(ev->window);
-	if (m != selmon) {
-		unfocus(selmon->sel, 1);
-		selmon = m;
-	} else if (!c || c == selmon->sel)
+	if (!c || c == mons->sel)
 		return;
 	focus(c);
 }
@@ -574,24 +567,23 @@ enternotify(XEvent *e)
 void
 expose(XEvent *e)
 {
-	Monitor *m;
 	XExposeEvent *ev = &e->xexpose;
 
-	if (ev->count == 0 && (m = wintomon(ev->window)))
-		drawbar(m);
+	if (ev->count == 0)
+		drawbar(mons);
 }
 
 void
 focus(Client *c)
 {
 	if (!c || !ISVISIBLE(c))
-		for (c = selmon->stack; c && !ISVISIBLE(c); c = c->snext);
-	/* was if (selmon->sel) */
-	if (selmon->sel && selmon->sel != c)
-		unfocus(selmon->sel, 0);
+		for (c = mons->stack; c && !ISVISIBLE(c); c = c->snext);
+	/* was if (mons->sel) */
+	if (mons->sel && mons->sel != c)
+		unfocus(mons->sel, 0);
 	if (c) {
-		if (c->mon != selmon)
-			selmon = c->mon;
+		if (c->mon != mons)
+			mons = c->mon;
 		if (c->isurgent)
 			clearurgent(c);
 		detachstack(c);
@@ -602,7 +594,7 @@ focus(Client *c)
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
-	selmon->sel = c;
+	mons->sel = c;
 	drawbar(mons);
 }
 
@@ -611,14 +603,14 @@ focusstack(const Arg *arg)
 {
 	Client *c = NULL, *i;
 
-	if (!selmon->sel)
+	if (!mons->sel)
 		return;
 	if (arg->i > 0) {
-		for (c = selmon->sel->next; c && !ISVISIBLE(c); c = c->next);
+		for (c = mons->sel->next; c && !ISVISIBLE(c); c = c->next);
 		if (!c)
-			for (c = selmon->clients; c && !ISVISIBLE(c); c = c->next);
+			for (c = mons->clients; c && !ISVISIBLE(c); c = c->next);
 	} else {
-		for (i = selmon->clients; i != selmon->sel; i = i->next)
+		for (i = mons->clients; i != mons->sel; i = i->next)
 			if (ISVISIBLE(i))
 				c = i;
 		if (!c)
@@ -628,7 +620,7 @@ focusstack(const Arg *arg)
 	}
 	if (c) {
 		focus(c);
-		restack(selmon);
+		restack(mons);
 	}
 }
 
@@ -646,16 +638,6 @@ getatomprop(Client *c, Atom prop)
 		XFree(p);
 	}
 	return atom;
-}
-
-int
-getrootptr(int *x, int *y)
-{
-	int di;
-	unsigned int dui;
-	Window dummy;
-
-	return XQueryPointer(dpy, root, &dummy, &dummy, x, y, &di, &di, &dui);
 }
 
 long
@@ -738,13 +720,13 @@ keypress(XEvent *e)
 void
 killclient(const Arg *arg)
 {
-	if (!selmon->sel)
+	if (!mons->sel)
 		return;
-	if (!sendevent(selmon->sel, wmatom[WMDelete])) {
+	if (!sendevent(mons->sel, wmatom[WMDelete])) {
 		XGrabServer(dpy);
 		XSetErrorHandler(xerrordummy);
 		XSetCloseDownMode(dpy, DestroyAll);
-		XKillClient(dpy, selmon->sel->win);
+		XKillClient(dpy, mons->sel->win);
 		XSync(dpy, False);
 		XSetErrorHandler(xerror);
 		XUngrabServer(dpy);
@@ -764,7 +746,7 @@ manage(Window w, XWindowAttributes *wa)
 		c->mon = t->mon;
 		c->tags = t->tags;
 	} else {
-		c->mon = selmon;
+		c->mon = mons;
 		applyrules(c);
 	}
 	/* geometry */
@@ -797,8 +779,8 @@ manage(Window w, XWindowAttributes *wa)
 	                (unsigned char *) &(c->win), 1);
 	XMoveResizeWindow(dpy, c->win, c->x + 2 * sw, c->y, c->w, c->h); /* some windows require this */
 	setclientstate(c, NormalState);
-	if (c->mon == selmon)
-		unfocus(selmon->sel, 0);
+	if (c->mon == mons)
+		unfocus(mons->sel, 0);
 	c->mon->sel = c;
 	arrange(c->mon);
 	XMapWindow(dpy, c->win);
@@ -845,17 +827,14 @@ monocle(Monitor *m)
 void
 motionnotify(XEvent *e)
 {
-	static Monitor *mon = NULL;
 	XMotionEvent *ev = &e->xmotion;
 
 	if (ev->window != root)
 		return;
 	if (mons) {
-		unfocus(selmon->sel, 1);
-		selmon = mons;
+		unfocus(mons->sel, 1);
 		focus(NULL);
 	}
-	mon = mons;
 }
 
 Client *
@@ -1161,7 +1140,7 @@ void
 spawn(const Arg *arg)
 {
 	if (arg->v == dmenucmd)
-		dmenumon[0] = '0' + selmon->num;
+		dmenumon[0] = '0' + mons->num;
 	if (fork() == 0) {
 		if (dpy)
 			close(ConnectionNumber(dpy));
@@ -1176,10 +1155,10 @@ spawn(const Arg *arg)
 void
 togglebar(const Arg *arg)
 {
-	selmon->showbar = !selmon->showbar;
-	updatebarpos(selmon);
-	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx, selmon->by, selmon->ww, bh);
-	arrange(selmon);
+	mons->showbar = !mons->showbar;
+	updatebarpos(mons);
+	XMoveResizeWindow(dpy, mons->barwin, mons->wx, mons->by, mons->ww, bh);
+	arrange(mons);
 }
 
 void
@@ -1290,10 +1269,6 @@ updategeom(void)
 			updatebarpos(mons);
 		}
 	}
-	if (dirty) {
-		selmon = mons;
-		selmon = wintomon(root);
-	}
 	return dirty;
 }
 
@@ -1346,7 +1321,7 @@ updatestatus(void)
 {
 	if (!gettextprop(root, XA_WM_NAME, stext, sizeof(stext)))
 		strcpy(stext, "dwm-"VERSION);
-	drawbar(selmon);
+	drawbar(mons);
 }
 
 void
@@ -1355,7 +1330,7 @@ updatewmhints(Client *c)
 	XWMHints *wmh;
 
 	if ((wmh = XGetWMHints(dpy, c->win))) {
-		if (c == selmon->sel && wmh->flags & XUrgencyHint) {
+		if (c == mons->sel && wmh->flags & XUrgencyHint) {
 			wmh->flags &= ~XUrgencyHint;
 			XSetWMHints(dpy, c->win, wmh);
 		} else
@@ -1371,13 +1346,13 @@ updatewmhints(Client *c)
 void
 view(const Arg *arg)
 {
-	if ((arg->ui & TAGMASK) == selmon->tagset[selmon->seltags])
+	if ((arg->ui & TAGMASK) == mons->tagset[mons->seltags])
 		return;
-	selmon->seltags ^= 1; /* toggle sel tagset */
+	mons->seltags ^= 1; /* toggle sel tagset */
 	if (arg->ui & TAGMASK)
-		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
+		mons->tagset[mons->seltags] = arg->ui & TAGMASK;
 	focus(NULL);
-	arrange(selmon);
+	arrange(mons);
 }
 
 Client *
@@ -1389,21 +1364,6 @@ wintoclient(Window w)
         if (c->win == w)
             return c;
 	return NULL;
-}
-
-Monitor *
-wintomon(Window w)
-{
-	int x, y;
-	Client *c;
-
-	if (w == root && getrootptr(&x, &y))
-		return mons;
-    if (w == mons->barwin)
-        return mons;
-	if ((c = wintoclient(w)))
-		return c->mon;
-	return selmon;
 }
 
 /* There's no way to check accesses to destroyed windows, thus those cases are
@@ -1435,19 +1395,19 @@ xerrordummy(Display *dpy, XErrorEvent *ee)
 Client *
 findbefore(Client *c) {
 	Client *tmp;
-	if(c == selmon->clients)
+	if(c == mons->clients)
 		return NULL;
-	for(tmp = selmon->clients; tmp && tmp->next != c; tmp = tmp->next) ;
+	for(tmp = mons->clients; tmp && tmp->next != c; tmp = tmp->next) ;
 	return tmp;
 }
 void
 zoomswap(const Arg *arg) {
-    Client *c = selmon->sel;
+    Client *c = mons->sel;
     Client *at = NULL, *cold, *cprevious = NULL;
 
-    if(!selmon->lt[selmon->sellt]->arrange)
+    if(!mons->lt[mons->sellt]->arrange)
         return;
-    if(c == nexttiled(selmon->clients)) {
+    if(c == nexttiled(mons->clients)) {
         at = findbefore(prevzoom);
         if(at)
             cprevious = nexttiled(at->next);
@@ -1458,7 +1418,7 @@ zoomswap(const Arg *arg) {
         } else
             c = cprevious;
     }
-    cold = nexttiled(selmon->clients);
+    cold = nexttiled(mons->clients);
     if(c != cold && !at)
         at = findbefore(c);
     detach(c);
