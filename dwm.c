@@ -112,7 +112,6 @@ struct Monitor {
 	Client *clients;
 	Client *sel;
 	Client *stack;
-	Monitor *next;
 	Window barwin;
 	const Layout *lt[2];
 };
@@ -163,7 +162,6 @@ static Client *nexttiled(Client *c);
 static void pop(Client *);
 static void propertynotify(XEvent *e);
 static void quit(const Arg *arg);
-static Monitor *recttomon(int x, int y, int w, int h);
 static void resize(Client *c, int x, int y, int w, int h, int interact);
 static void resizeclient(Client *c, int x, int y, int w, int h);
 static void restack(Monitor *m);
@@ -858,17 +856,16 @@ void
 motionnotify(XEvent *e)
 {
 	static Monitor *mon = NULL;
-	Monitor *m;
 	XMotionEvent *ev = &e->xmotion;
 
 	if (ev->window != root)
 		return;
-	if ((m = recttomon(ev->x_root, ev->y_root, 1, 1)) != mon && mon) {
+	if (mons) {
 		unfocus(selmon->sel, 1);
-		selmon = m;
+		selmon = mons;
 		focus(NULL);
 	}
-	mon = m;
+	mon = mons;
 }
 
 Client *
@@ -926,15 +923,7 @@ quit(const Arg *arg)
 Monitor *
 recttomon(int x, int y, int w, int h)
 {
-	Monitor *m, *r = selmon;
-	int a, area = 0;
-
-	for (m = mons; m; m = m->next)
-		if ((a = INTERSECT(x, y, w, h, m)) > area) {
-			area = a;
-			r = m;
-		}
-	return r;
+	return mons;
 }
 
 void
@@ -1261,21 +1250,17 @@ unmapnotify(XEvent *e)
 void
 updatebars(void)
 {
-	Monitor *m;
 	XSetWindowAttributes wa = {
 		.override_redirect = True,
 		.background_pixmap = ParentRelative,
 		.event_mask = ExposureMask
 	};
-	for (m = mons; m; m = m->next) {
-		if (m->barwin)
-			continue;
-		m->barwin = XCreateWindow(dpy, root, m->wx, m->by, m->ww, bh, 0, DefaultDepth(dpy, screen),
-		                          CopyFromParent, DefaultVisual(dpy, screen),
-		                          CWOverrideRedirect|CWBackPixmap|CWEventMask, &wa);
-		XDefineCursor(dpy, m->barwin, cursor[CurNormal]->cursor);
-		XMapRaised(dpy, m->barwin);
-	}
+    if (!mons->barwin)
+        mons->barwin = XCreateWindow(dpy, root, mons->wx, mons->by, mons->ww, bh, 0, DefaultDepth(dpy, screen),
+                                  CopyFromParent, DefaultVisual(dpy, screen),
+                                  CWOverrideRedirect|CWBackPixmap|CWEventMask, &wa);
+    XDefineCursor(dpy, mons->barwin, cursor[CurNormal]->cursor);
+    XMapRaised(dpy, mons->barwin);
 }
 
 void
@@ -1295,14 +1280,12 @@ void
 updateclientlist()
 {
 	Client *c;
-	Monitor *m;
 
 	XDeleteProperty(dpy, root, netatom[NetClientList]);
-	for (m = mons; m; m = m->next)
-		for (c = m->clients; c; c = c->next)
-			XChangeProperty(dpy, root, netatom[NetClientList],
-			                XA_WINDOW, 32, PropModeAppend,
-			                (unsigned char *) &(c->win), 1);
+    for (c = mons->clients; c; c = c->next)
+        XChangeProperty(dpy, root, netatom[NetClientList],
+                        XA_WINDOW, 32, PropModeAppend,
+                        (unsigned char *) &(c->win), 1);
 }
 
 int
@@ -1415,12 +1398,10 @@ Client *
 wintoclient(Window w)
 {
 	Client *c;
-	Monitor *m;
 
-	for (m = mons; m; m = m->next)
-		for (c = m->clients; c; c = c->next)
-			if (c->win == w)
-				return c;
+    for (c = mons->clients; c; c = c->next)
+        if (c->win == w)
+            return c;
 	return NULL;
 }
 
@@ -1429,13 +1410,11 @@ wintomon(Window w)
 {
 	int x, y;
 	Client *c;
-	Monitor *m;
 
 	if (w == root && getrootptr(&x, &y))
-		return recttomon(x, y, 1, 1);
-	for (m = mons; m; m = m->next)
-		if (w == m->barwin)
-			return m;
+		return mons;
+    if (w == mons->barwin)
+        return mons;
 	if ((c = wintoclient(w)))
 		return c->mon;
 	return selmon;
