@@ -134,7 +134,6 @@ static void arrangemon(Monitor *m);
 static void attach(Client *c);
 static void attachstack(Client *c);
 static void cleanup(void);
-static void cleanupmon(Monitor *mon);
 static void clearurgent(Client *c);
 static void clientmessage(XEvent *e);
 static void configure(Client *c);
@@ -145,7 +144,6 @@ static void destroynotify(XEvent *e);
 static void detach(Client *c);
 static void detachstack(Client *c);
 static void drawbar(Monitor *m);
-static void drawbars(void);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
 static void focus(Client *c);
@@ -243,36 +241,19 @@ void
 applyrules(Client *c)
 {
 	const char *class, *instance;
-	unsigned int i;
-	const Rule *r;
-	Monitor *m;
 	XClassHint ch = { NULL, NULL };
 
-	/* rule matching */
 	c->isfloating = 0;
 	c->tags = 0;
 	XGetClassHint(dpy, c->win, &ch);
 	class    = ch.res_class ? ch.res_class : broken;
 	instance = ch.res_name  ? ch.res_name  : broken;
-
-	for (i = 0; i < LENGTH(rules); i++) {
-		r = &rules[i];
-		if ((!r->title || strstr(c->name, r->title))
-		&& (!r->class || strstr(class, r->class))
-		&& (!r->instance || strstr(instance, r->instance)))
-		{
-			c->isfloating = r->isfloating;
-			c->tags |= r->tags;
-			for (m = mons; m && m->num != r->monitor; m = m->next);
-			if (m)
-				c->mon = m;
-		}
-	}
+    c->mon = mons;
 	if (ch.res_class)
 		XFree(ch.res_class);
 	if (ch.res_name)
 		XFree(ch.res_name);
-	c->tags = c->tags & TAGMASK ? c->tags & TAGMASK : c->mon->tagset[c->mon->seltags];
+	c->tags = c->mon->tagset[c->mon->seltags];
 }
 
 int
@@ -344,15 +325,11 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
 void
 arrange(Monitor *m)
 {
-	if (m)
-		showhide(m->stack);
-	else for (m = mons; m; m = m->next)
-		showhide(m->stack);
 	if (m) {
+		showhide(m->stack);
 		arrangemon(m);
 		restack(m);
-	} else for (m = mons; m; m = m->next)
-		arrangemon(m);
+    }
 }
 
 void
@@ -381,17 +358,12 @@ cleanup(void)
 {
 	Arg a = {.ui = ~0};
 	Layout foo = { "", NULL };
-	Monitor *m;
 	size_t i;
 
 	view(&a);
 	selmon->lt[selmon->sellt] = &foo;
-	for (m = mons; m; m = m->next)
-		while (m->stack)
-			unmanage(m->stack, 0);
+    unmanage(mons->stack, 0);
 	XUngrabKey(dpy, AnyKey, AnyModifier, root);
-	while (mons)
-		cleanupmon(mons);
 	for (i = 0; i < CurLast; i++)
 		drw_cur_free(drw, cursor[i]);
 	for (i = 0; i < SchemeLast; i++) {
@@ -403,22 +375,6 @@ cleanup(void)
 	XSync(dpy, False);
 	XSetInputFocus(dpy, PointerRoot, RevertToPointerRoot, CurrentTime);
 	XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
-}
-
-void
-cleanupmon(Monitor *mon)
-{
-	Monitor *m;
-
-	if (mon == mons)
-		mons = mons->next;
-	else {
-		for (m = mons; m && m->next != mon; m = m->next);
-		m->next = mon->next;
-	}
-	XUnmapWindow(dpy, mon->barwin);
-	XDestroyWindow(dpy, mon->barwin);
-	free(mon);
 }
 
 void
@@ -477,7 +433,6 @@ configure(Client *c)
 void
 configurenotify(XEvent *e)
 {
-	Monitor *m;
 	XConfigureEvent *ev = &e->xconfigure;
 	int dirty;
 
@@ -489,8 +444,7 @@ configurenotify(XEvent *e)
 		if (updategeom() || dirty) {
 			drw_resize(drw, sw, bh);
 			updatebars();
-			for (m = mons; m; m = m->next)
-				XMoveResizeWindow(dpy, m->barwin, m->wx, m->by, m->ww, bh);
+            XMoveResizeWindow(dpy, mons->barwin, mons->wx, mons->by, mons->ww, bh);
 			focus(NULL);
 			arrange(NULL);
 		}
@@ -607,15 +561,6 @@ drawbar(Monitor *m)
 }
 
 void
-drawbars(void)
-{
-	Monitor *m;
-
-	for (m = mons; m; m = m->next)
-		drawbar(m);
-}
-
-void
 enternotify(XEvent *e)
 {
 	Client *c;
@@ -666,7 +611,7 @@ focus(Client *c)
 		XDeleteProperty(dpy, root, netatom[NetActiveWindow]);
 	}
 	selmon->sel = c;
-	drawbars();
+	drawbar(mons);
 }
 
 void
@@ -966,7 +911,7 @@ propertynotify(XEvent *e)
 			break;
 		case XA_WM_HINTS:
 			updatewmhints(c);
-			drawbars();
+			drawbar(mons);
 			break;
 		}
 	}
