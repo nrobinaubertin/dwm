@@ -78,7 +78,7 @@ struct Client {
 	int basew, baseh, incw, inch, maxw, maxh, minw, minh;
 	int bw, oldbw;
 	unsigned int tags;
-	int isfixed, isfloating, isurgent, neverfocus, oldstate, isfullscreen;
+	int isfixed, isurgent, neverfocus, oldstate, isfullscreen;
 	Client *next;
 	Client *snext;
 	Monitor *mon;
@@ -121,7 +121,6 @@ typedef struct {
 	const char *instance;
 	const char *title;
 	unsigned int tags;
-	int isfloating;
 	int monitor;
 } Rule;
 
@@ -241,7 +240,6 @@ applyrules(Client *c)
 	const char *class, *instance;
 	XClassHint ch = { NULL, NULL };
 
-	c->isfloating = 0;
 	c->tags = 0;
 	XGetClassHint(dpy, c->win, &ch);
 	class    = ch.res_class ? ch.res_class : broken;
@@ -286,7 +284,7 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
 		*h = bh;
 	if (*w < bh)
 		*w = bh;
-	if (resizehints || c->isfloating || !c->mon->lt[c->mon->sellt]->arrange) {
+	if (resizehints || !c->mon->lt[c->mon->sellt]->arrange) {
 		/* see last two sentences in ICCCM 4.1.2.3 */
 		baseismin = c->basew == c->minw && c->baseh == c->minh;
 		if (!baseismin) { /* temporarily remove base dimensions */
@@ -460,7 +458,7 @@ configurerequest(XEvent *e)
 	if ((c = wintoclient(ev->window))) {
 		if (ev->value_mask & CWBorderWidth)
 			c->bw = ev->border_width;
-		else if (c->isfloating || !selmon->lt[selmon->sellt]->arrange) {
+		else if (!selmon->lt[selmon->sellt]->arrange) {
 			m = c->mon;
 			if (ev->value_mask & CWX) {
 				c->oldx = c->x;
@@ -478,10 +476,6 @@ configurerequest(XEvent *e)
 				c->oldh = c->h;
 				c->h = ev->height;
 			}
-			if ((c->x + c->w) > m->mx + m->mw && c->isfloating)
-				c->x = m->mx + (m->mw / 2 - WIDTH(c) / 2); /* center in x direction */
-			if ((c->y + c->h) > m->my + m->mh && c->isfloating)
-				c->y = m->my + (m->mh / 2 - HEIGHT(c) / 2); /* center in y direction */
 			if ((ev->value_mask & (CWX|CWY)) && !(ev->value_mask & (CWWidth|CWHeight)))
 				configure(c);
 			if (ISVISIBLE(c))
@@ -797,10 +791,6 @@ manage(Window w, XWindowAttributes *wa)
 	updatesizehints(c);
 	updatewmhints(c);
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
-	if (!c->isfloating)
-		c->isfloating = c->oldstate = trans != None || c->isfixed;
-	if (c->isfloating)
-		XRaiseWindow(dpy, c->win);
 	attach(c);
 	attachstack(c);
 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
@@ -871,7 +861,7 @@ motionnotify(XEvent *e)
 Client *
 nexttiled(Client *c)
 {
-	for (; c && (c->isfloating || !ISVISIBLE(c)); c = c->next);
+	for (; c && (!ISVISIBLE(c)); c = c->next);
 	return c;
 }
 
@@ -899,8 +889,7 @@ propertynotify(XEvent *e)
 		switch(ev->atom) {
 		default: break;
 		case XA_WM_TRANSIENT_FOR:
-			if (!c->isfloating && (XGetTransientForHint(dpy, c->win, &trans)) &&
-			   (c->isfloating = (wintoclient(trans)) != NULL))
+			if (XGetTransientForHint(dpy, c->win, &trans))
 				arrange(c->mon);
 			break;
 		case XA_WM_NORMAL_HINTS:
@@ -958,13 +947,13 @@ restack(Monitor *m)
 	drawbar(m);
 	if (!m->sel)
 		return;
-	if (m->sel->isfloating || !m->lt[m->sellt]->arrange)
+	if (!m->lt[m->sellt]->arrange)
 		XRaiseWindow(dpy, m->sel->win);
 	if (m->lt[m->sellt]->arrange) {
 		wc.stack_mode = Below;
 		wc.sibling = m->barwin;
 		for (c = m->stack; c; c = c->snext)
-			if (!c->isfloating && ISVISIBLE(c)) {
+			if (ISVISIBLE(c)) {
 				XConfigureWindow(dpy, c->win, CWSibling|CWStackMode, &wc);
 				wc.sibling = c->win;
 			}
@@ -1064,17 +1053,14 @@ setfullscreen(Client *c, int fullscreen)
 		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
 		                PropModeReplace, (unsigned char*)&netatom[NetWMFullscreen], 1);
 		c->isfullscreen = 1;
-		c->oldstate = c->isfloating;
 		c->oldbw = c->bw;
 		c->bw = 0;
-		c->isfloating = 1;
 		resizeclient(c, c->mon->mx, c->mon->my, c->mon->mw, c->mon->mh);
 		XRaiseWindow(dpy, c->win);
 	} else if (!fullscreen && c->isfullscreen){
 		XChangeProperty(dpy, c->win, netatom[NetWMState], XA_ATOM, 32,
 		                PropModeReplace, (unsigned char*)0, 0);
 		c->isfullscreen = 0;
-		c->isfloating = c->oldstate;
 		c->bw = c->oldbw;
 		c->x = c->oldx;
 		c->y = c->oldy;
@@ -1153,7 +1139,7 @@ showhide(Client *c)
 	if (ISVISIBLE(c)) {
 		/* show clients top down */
 		XMoveWindow(dpy, c->win, c->x, c->y);
-		if ((!c->mon->lt[c->mon->sellt]->arrange || c->isfloating) && !c->isfullscreen)
+		if ((!c->mon->lt[c->mon->sellt]->arrange) && !c->isfullscreen)
 			resize(c, c->x, c->y, c->w, c->h, 0);
 		showhide(c->snext);
 	} else {
@@ -1459,8 +1445,7 @@ zoomswap(const Arg *arg) {
     Client *c = selmon->sel;
     Client *at = NULL, *cold, *cprevious = NULL;
 
-    if(!selmon->lt[selmon->sellt]->arrange
-            || (selmon->sel && selmon->sel->isfloating))
+    if(!selmon->lt[selmon->sellt]->arrange)
         return;
     if(c == nexttiled(selmon->clients)) {
         at = findbefore(prevzoom);

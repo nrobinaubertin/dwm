@@ -23,8 +23,8 @@ static const char *tags[] = { "DWM" };
 
 // not used for now
 static const Rule rules[] = {
-	/* class      instance    title       tags mask     isfloating   monitor */
-    { NULL,       NULL,       NULL,       0,            False,       -1 },
+	/* class      instance    title       tags mask     monitor */
+    { NULL,       NULL,       NULL,       0,            -1 },
 };
 
 /* layout(s) */
