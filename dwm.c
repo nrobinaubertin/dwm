@@ -187,7 +187,6 @@ static int updategeom(void);
 static void updatebarpos(Monitor *m);
 static void updatebars(void);
 static void updateclientlist(void);
-static void updatenumlockmask(void);
 static void updatesizehints(Client *c);
 static void updatestatus(void);
 static void updatewmhints(Client *c);
@@ -769,7 +768,6 @@ gettextprop(Window w, Atom atom, char *text, unsigned int size)
 void
 grabkeys(void)
 {
-	updatenumlockmask();
 	{
 		unsigned int i, j;
 		unsigned int modifiers[] = { 0, LockMask, numlockmask, numlockmask|LockMask };
@@ -1383,22 +1381,6 @@ updategeom(void)
 		selmon = wintomon(root);
 	}
 	return dirty;
-}
-
-void
-updatenumlockmask(void)
-{
-	unsigned int i, j;
-	XModifierKeymap *modmap;
-
-	numlockmask = 0;
-	modmap = XGetModifierMapping(dpy);
-	for (i = 0; i < 8; i++)
-		for (j = 0; j < modmap->max_keypermod; j++)
-			if (modmap->modifiermap[i * modmap->max_keypermod + j]
-			   == XKeysymToKeycode(dpy, XK_Num_Lock))
-				numlockmask = (1 << i);
-	XFreeModifiermap(modmap);
 }
 
 void
