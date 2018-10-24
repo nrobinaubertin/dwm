@@ -14,28 +14,11 @@ static const char selbgcolor[]      = "#282828";
 static const char selfgcolor[]      = "#ebdbb2";
 static const unsigned int borderpx  = 0;        /* border pixel of windows */
 static const unsigned int snap      = 32;       /* snap pixel */
-static const int showbar            = 0;        /* 0 means no bar */
+static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
 
 /* tagging */
-// static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 static const char *tags[] = { "DWM" };
-
-// not used for now
-static const Rule rules[] = {
-	/* class      instance    title       tags mask     monitor */
-    { NULL,       NULL,       NULL,       0,            -1 },
-};
-
-/* layout(s) */
-// not used for now
-static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
-static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
-
-static const Layout layouts[] = {
-	{ "monocle",      monocle },
-};
 
 static void togglesound(const Arg *arg);
 static void alternatescreen(const Arg *arg);
@@ -79,9 +62,8 @@ static Key keys[] = {
 	{ WINKEY,                       XK_Tab,                         zoomswap,           {0} },
 	{ WINKEY,                       XK_q,                           togglebar,          {0} },
 	{ WINKEY,	                    XK_s,                           alternatescreen,    {0} },
-	{ WINKEY,	                    XK_r,                           changeredshift,     {.i = +1 } },
+	{ WINKEY,	                    XK_r,                           changeredshift,     {0} },
 	{ WINKEY,	                    XK_b,                           spawn,              {.v = bklu } },
-	{ WINKEY|ShiftMask,	            XK_r,                           changeredshift,     {.i = -1 } },
 	{ WINKEY|ShiftMask,	            XK_b,                           spawn,              {.v = bkld } },
 	{ WINKEY|ShiftMask,             XK_q,                           quit,               {0} },
 	{ WINKEY|ShiftMask,             XK_c,                           killclient,         {0} },
@@ -97,9 +79,7 @@ static Key keys[] = {
 
 // funtion that alternates between LVDS1 (laptop screen) and VGA1 (VGA output)
 static int screen_id = 0;
-void
-alternatescreen(const Arg *arg)
-{
+void alternatescreen(const Arg *arg) {
     if (screen_id % 2 == 0) {
         system("xrandr --output LVDS1 --auto && xrandr --output VGA1 --off");
     } else {
@@ -110,17 +90,9 @@ alternatescreen(const Arg *arg)
 
 // function that controls the redshift status
 static int redShift = 0;
-void
-changeredshift(const Arg *arg)
-{
-    redShift = (redShift + arg->i + 5) % 5;
+void changeredshift(const Arg *arg) {
+    redShift = (redShift + 1) % 3;
     switch(redShift) {
-        case 4:
-            system("redshift -O 2000");
-            break;
-        case 3:
-            system("redshift -O 2600");
-            break;
         case 2:
             system("redshift -O 3200");
             break;
@@ -135,9 +107,7 @@ changeredshift(const Arg *arg)
 
 // function that controls if the sound is muted
 static int isMute = 1;
-void
-togglesound(const Arg *arg)
-{
+void togglesound(const Arg *arg) {
     if(isMute == 1) {
         system("amixer set Master unmute");
         system("amixer set Speaker unmute");
