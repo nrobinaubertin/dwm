@@ -45,6 +45,7 @@ static const char *volu[] = { "amixer", "-q", "set", "Master", "5%+", "unmute", 
 static const char *bklu[] = { "xbacklight", "-steps", "1", "-time", "0", "-inc", "5", NULL };
 static const char *bkld[] = { "xbacklight", "-steps", "1", "-time", "0", "-dec", "5", NULL };
 static const char *shtdwn[] = { "sudo", "shutdown", "-h", "now", NULL };
+static const char *rstclpbd[] = { "xsel", "-cb", NULL };
 
 /*
  * Rules for the keyboard shortcuts:
@@ -63,6 +64,7 @@ static Key keys[] = {
 	{ WINKEY,                       XK_q,                           togglebar,          {0} },
 	{ WINKEY,	                    XK_s,                           alternatescreen,    {0} },
 	{ WINKEY,	                    XK_r,                           changeredshift,     {0} },
+	{ WINKEY,                       XK_m,                           spawn,              {.v = rstclpbd } },
 	{ WINKEY,	                    XK_b,                           spawn,              {.v = bklu } },
 	{ WINKEY|ShiftMask,	            XK_b,                           spawn,              {.v = bkld } },
 	{ WINKEY|ShiftMask,             XK_q,                           quit,               {0} },
