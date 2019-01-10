@@ -21,7 +21,6 @@ static const int topbar             = 1;        /* 0 means bottom bar */
 static const char *tags[] = { "DWM" };
 
 static void togglesound(const Arg *arg);
-static void alternatescreen(const Arg *arg);
 static void changeredshift(const Arg *arg);
 
 /* key definitions */
@@ -42,6 +41,7 @@ static const char *slock[]  = { "slock", NULL };
 static const char *web[] = { "firefox", NULL };
 static const char *vold[] = { "amixer", "-q", "set", "Master", "5%-", "unmute", NULL };
 static const char *volu[] = { "amixer", "-q", "set", "Master", "5%+", "unmute", NULL };
+static const char *altscr[] = { "altscr", NULL };
 static const char *bklu[] = { "xbacklight", "-steps", "1", "-time", "0", "-inc", "5", NULL };
 static const char *bkld[] = { "xbacklight", "-steps", "1", "-time", "0", "-dec", "5", NULL };
 static const char *shtdwn[] = { "sudo", "shutdown", "-h", "now", NULL };
@@ -62,7 +62,7 @@ static Key keys[] = {
 	{ WINKEY,                       XK_k,                           focusstack,         {.i = -1 } },
 	{ WINKEY,                       XK_Tab,                         zoomswap,           {0} },
 	{ WINKEY,                       XK_q,                           togglebar,          {0} },
-	{ WINKEY,	                    XK_s,                           alternatescreen,    {0} },
+	{ WINKEY,	                    XK_s,                           spawn,              {.v = altscr } },
 	{ WINKEY,	                    XK_r,                           changeredshift,     {0} },
 	{ WINKEY,                       XK_m,                           spawn,              {.v = rstclpbd } },
 	{ WINKEY,	                    XK_b,                           spawn,              {.v = bklu } },
@@ -78,17 +78,6 @@ static Key keys[] = {
 	{ 0,	                        XF86XK_AudioLowerVolume,        spawn,              {.v = vold } },
 	{ 0,	                        XF86XK_AudioRaiseVolume,        spawn,              {.v = volu } },
 };
-
-// funtion that alternates between LVDS1 (laptop screen) and VGA1 (VGA output)
-static int screen_id = 0;
-void alternatescreen(const Arg *arg) {
-    if (screen_id % 2 == 0) {
-        system("xrandr --output LVDS1 --auto && xrandr --output VGA1 --off");
-    } else {
-        system("xrandr --output VGA1 --auto && xrandr --output LVDS1 --off");
-    }
-    screen_id++;
-}
 
 // function that controls the redshift status
 static int redShift = 0;
