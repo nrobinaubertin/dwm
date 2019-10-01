@@ -4,8 +4,8 @@
 #include "X11/XF86keysym.h"
 
 /* appearance */
-static const char *fonts[] = { "DejaVuSansMono:size=10" };
-static const char dmenufont[]       = "DejaVuSansMono:size=10";
+static const char *fonts[] = { "DejaVu Sans Mono:size=10" };
+static const char dmenufont[]       = "DejaVu Sans Mono:size=10";
 static const char normbordercolor[] = "#928374";
 static const char normbgcolor[]     = "#282828";
 static const char normfgcolor[]     = "#ebdbb2";
@@ -27,8 +27,8 @@ static void changeredshift(const Arg *arg);
 #define MODKEY Mod1Mask
 #define WINKEY Mod4Mask
 #define TAGKEYS(KEY,TAG) \
-	{ WINKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
-	{ WINKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} },
+    { WINKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
+    { WINKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} },
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
@@ -37,14 +37,10 @@ static void changeredshift(const Arg *arg);
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", normbgcolor, "-nf", normfgcolor, "-sb", selbgcolor, "-sf", selfgcolor, NULL };
 static const char *term[]  = { "st", NULL };
-static const char *slock[]  = { "slock", NULL };
 static const char *web[] = { "firefox", NULL };
 static const char *vold[] = { "amixer", "-q", "set", "Master", "5%-", "unmute", NULL };
 static const char *volu[] = { "amixer", "-q", "set", "Master", "5%+", "unmute", NULL };
 static const char *altscr[] = { "altscr", NULL };
-static const char *bklu[] = { "xbacklight", "-steps", "1", "-time", "0", "-inc", "5", NULL };
-static const char *bkld[] = { "xbacklight", "-steps", "1", "-time", "0", "-dec", "5", NULL };
-static const char *shtdwn[] = { "sudo", "shutdown", "-h", "now", NULL };
 static const char *rstclpbd[] = { "xsel", "-cb", NULL };
 
 /*
@@ -53,30 +49,24 @@ static const char *rstclpbd[] = { "xsel", "-cb", NULL };
  * - use the ShifMask to avoid pressing the shortcut by accident
  */
 static Key keys[] = {
-	/* modifier                     key                             function            argument */
-	{ WINKEY,                       XK_p,                           spawn,              {.v = dmenucmd } },
-	{ WINKEY,                       XK_l,                           spawn,              {.v = slock } },
-	{ WINKEY,                       XK_w,                           spawn,              {.v = web } },
-	{ WINKEY,                       XK_t,                           spawn,              {.v = term } },
-	{ WINKEY,                       XK_j,                           focusstack,         {.i = +1 } },
-	{ WINKEY,                       XK_k,                           focusstack,         {.i = -1 } },
-	{ WINKEY,                       XK_Tab,                         zoomswap,           {0} },
-	{ WINKEY,                       XK_q,                           togglebar,          {0} },
-	{ WINKEY,	                    XK_s,                           spawn,              {.v = altscr } },
-	{ WINKEY,	                    XK_r,                           changeredshift,     {0} },
-	{ WINKEY,                       XK_m,                           spawn,              {.v = rstclpbd } },
-	{ WINKEY,	                    XK_b,                           spawn,              {.v = bklu } },
-	{ WINKEY|ShiftMask,	            XK_b,                           spawn,              {.v = bkld } },
-	{ WINKEY|ShiftMask,             XK_q,                           quit,               {0} },
-	{ WINKEY|ShiftMask,             XK_c,                           killclient,         {0} },
-	{ WINKEY|ShiftMask,             XK_k,                           spawn,              {.v = shtdwn } },
+    /* modifier                     key                             function            argument */
+    { WINKEY,                       XK_p,                           spawn,              {.v = dmenucmd } },
+    { WINKEY,                       XK_w,                           spawn,              {.v = web } },
+    { WINKEY,                       XK_t,                           spawn,              {.v = term } },
+    { WINKEY,                       XK_j,                           focusstack,         {.i = +1 } },
+    { WINKEY,                       XK_k,                           focusstack,         {.i = -1 } },
+    { WINKEY,                       XK_Tab,                         zoomswap,           {0} },
+    { WINKEY,                       XK_q,                           togglebar,          {0} },
+    { WINKEY,                       XK_s,                           spawn,              {.v = altscr } },
+    { WINKEY,                       XK_r,                           changeredshift,     {0} },
+    { WINKEY,                       XK_m,                           spawn,              {.v = rstclpbd } },
+    { WINKEY|ShiftMask,             XK_q,                           quit,               {0} },
+    { WINKEY|ShiftMask,             XK_c,                           killclient,         {0} },
 
     // thinkpad media keys (can be found with `xmodmap -pke`)
-	{ 0,	                        XF86XK_MonBrightnessDown,       spawn,              {.v = bkld } },
-	{ 0,	                        XF86XK_MonBrightnessUp,         spawn,              {.v = bklu } },
-	{ 0,	                        XF86XK_AudioMute,               togglesound,        {0} },
-	{ 0,	                        XF86XK_AudioLowerVolume,        spawn,              {.v = vold } },
-	{ 0,	                        XF86XK_AudioRaiseVolume,        spawn,              {.v = volu } },
+    { 0,                            XF86XK_AudioMute,               togglesound,        {0} },
+    { 0,                            XF86XK_AudioLowerVolume,        spawn,              {.v = vold } },
+    { 0,                            XF86XK_AudioRaiseVolume,        spawn,              {.v = volu } },
 };
 
 // function that controls the redshift status
